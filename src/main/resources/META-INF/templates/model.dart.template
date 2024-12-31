@@ -1,0 +1,14 @@
+import 'package:json_annotation/json_annotation.dart';
+part 'model.g.dart';
+
+@JsonSerializable(fieldRename: FieldRename.snake)
+class ${model_name}Model {
+
+  ${model_name}Model({
+  });
+
+  factory ${model_name}Model.fromJson(Map<String, dynamic> json) =>
+      _$${model_name}ModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$${model_name}ModelToJson(this);
+}
