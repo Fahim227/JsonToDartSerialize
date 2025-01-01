@@ -9,10 +9,11 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import io.ktor.utils.io.errors.*
-import java.io.InputStreamReader
 import org.apache.commons.lang.text.StrSubstitutor
 import org.json.JSONObject
+import java.io.InputStreamReader
 import javax.swing.*
+import kotlin.reflect.typeOf
 
 
 public class MyAction: AnAction() {
@@ -32,11 +33,12 @@ public class MyAction: AnAction() {
 
                         val templateUrl = "/META-INF/templates/model.dart.template"
                         val resourceAsStream = MyAction::class.java.getResourceAsStream(templateUrl)
-                        val processedContent = CharStreams.toString(InputStreamReader(resourceAsStream, Charsets.UTF_8))
+                        var processedContent = CharStreams.toString(InputStreamReader(resourceAsStream, Charsets.UTF_8))
 
                         val replacements = mapOf(
                             "model_name" to fileName,
                         )
+
 
 
                         val substitutor = StrSubstitutor(replacements)
@@ -45,10 +47,12 @@ public class MyAction: AnAction() {
                         var resultString = substitutor.replace(processedContent)
                         resultString = replaceModelName(resultString,fileName)
 
-
                         // Step 2: Dynamically build variable declarations
-                        print(jsonToDartVariables(jsonData))
-
+                        val classRegex = "class ${fileName}Model \\{".toRegex()
+                        val variableDeclarations = jsonToDartVariables(jsonData)
+                        resultString = resultString.replace(classRegex) {
+                            it.value + "\n\n" + variableDeclarations
+                        }
 
                         fileName = "$fileName.dart"
                         // Use runWriteAction to perform the write operation
@@ -94,15 +98,34 @@ public class MyAction: AnAction() {
     fun jsonToDartVariables(jsonString: String): String {
         // Parse JSON string into a map-like structure
         val jsonObject = JSONObject(jsonString)
+        val allKeys = jsonObject.keys()
+
+        val allSequence = allKeys.asSequence()
+
 
         // Transform each key-value pair into Dart variable declarations
-        return jsonObject.keys().asSequence()
-            .joinToString(separator = "\n") { key ->
-                val type = jsonObject.get(key).toString()
-                val dartVariableName = key// Convert key to camelCase
-                "final $type $dartVariableName;"
-            }
+        return allSequence.joinToString(separator = "\n") { key ->
+
+            val type = handleJavaLangType(jsonObject.get(key))
+            println(type)
+            println(type::class.java.typeName)
+            val dartVariableName = key// Convert key to camelCase
+            "  final $type $dartVariableName;"
+        }
     }
+
+    fun handleJavaLangType(type: Any): String {
+        return when (type::class.java.typeName) {
+            "java.lang.String" -> "String"
+            "java.lang.Integer" -> "int"
+            "java.lang.Boolean" -> "bool"
+            "java.lang.Double" -> "double"
+            "java.lang.Float" -> "double"
+            "java.lang.Long" -> "double"
+            else -> "String"
+        }
+    }
+
 
 }
 
