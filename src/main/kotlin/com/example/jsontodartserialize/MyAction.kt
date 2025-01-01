@@ -1,4 +1,5 @@
 
+import android.databinding.tool.ext.toCamelCase
 import com.google.common.io.CharStreams
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
