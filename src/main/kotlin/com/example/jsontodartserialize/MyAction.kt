@@ -9,9 +9,9 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import io.ktor.utils.io.errors.*
-import java.io.File
 import java.io.InputStreamReader
 import org.apache.commons.lang.text.StrSubstitutor
+import org.json.JSONObject
 import javax.swing.*
 
 
@@ -27,59 +27,27 @@ public class MyAction: AnAction() {
                 var fileName = dialog.getClassName
                 val jsonData = dialog.getJsonData
 
-                if (fileName.isEmpty() && jsonData.isEmpty()) {
+                if (fileName.isNotEmpty() && jsonData.isNotEmpty()) {
                     try {
 
                         val templateUrl = "/META-INF/templates/model.dart.template"
-//                        val bufferedReader: BufferedReader = File(templateUrl).bufferedReader()
-//                        val inputString = bufferedReader.use { it.readText() }
-//                        println(inputString)
-                        println("project.basePath ==== ${project.basePath}")
-                        println(project.projectFile?.url)
-
-
                         val resourceAsStream = MyAction::class.java.getResourceAsStream(templateUrl)
-                        val templateString = CharStreams.toString(InputStreamReader(resourceAsStream, Charsets.UTF_8))
-
-                        val file = File(templateUrl)
-                        val templateFile = VfsUtil.findFileByIoFile(file, true)
-                        println(templateFile?.url)
-                        println(templateString)
-                        println("TEst 1")
-
-                        val templateContent = templateFile?.let { VfsUtil.loadText(it) }
-
-                        var processedContent = templateString
+                        val processedContent = CharStreams.toString(InputStreamReader(resourceAsStream, Charsets.UTF_8))
 
                         val replacements = mapOf(
-                            "model_name" to "fileName",
+                            "model_name" to fileName,
                         )
-
-//                        for ((placeholder, value) in replacements) {
-//                            println(placeholder)
-//                            processedContent = processedContent.replace("{{${placeholder}}}", value)
-//                            println(processedContent)
-//
-//                        }
-
-                        // Create a StringSubstitutor from the values map
-
-//                        val escapedTemplate = processedContent.replace("_$\\$\\{(\\w+)}".toRegex(), "ESCAPED_PLACEHOLDER_$1")
 
 
                         val substitutor = StrSubstitutor(replacements)
 
                         // Perform the substitution
                         var resultString = substitutor.replace(processedContent)
+                        resultString = replaceModelName(resultString,fileName)
 
-                        replacements.forEach { (key, value) ->
-                            val regex = "_\\$\\{${key}}".toRegex()
-                            println(regex)
-                                resultString = resultString.replace(regex, "_$$value")
-                            }
 
-                        println("resultString $resultString")
-
+                        // Step 2: Dynamically build variable declarations
+                        print(jsonToDartVariables(jsonData))
 
 
                         fileName = "$fileName.dart"
@@ -90,19 +58,6 @@ public class MyAction: AnAction() {
                             // Write content to the file
                             VfsUtil.saveText(newFile, resultString)
                         }
-
-                        // Define the file path
-//                        val filePath = file.path
-//
-//                        // Create the parent directories if they don't exist
-//
-//                        // Write the template content to the file
-//                        Files.write(Paths.get(filePath), templateContent.toByteArray())
-
-//                        val templateFolder =  "bloc_without_equatable"
-//                        val resourcePath = "/templates/model.dart.template"
-//                        val resourceAsStream = BlocGenerator::class.java.getResourceAsStream(resourcePath)
-//                        val templateContent = CharStreams.toString(InputStreamReader(resourceAsStream, Charsets.UTF_8))
 
 
                         Messages.showMessageDialog(
@@ -129,6 +84,24 @@ public class MyAction: AnAction() {
             }
         }
 
+    }
+
+    fun replaceModelName(template: String, modelName: String): String {
+        val regex = "\\{model_name}".toRegex() // Matches ${model_name}
+        return template.replace(regex, modelName) // Replaces ${model_name} with modelName
+    }
+
+    fun jsonToDartVariables(jsonString: String): String {
+        // Parse JSON string into a map-like structure
+        val jsonObject = JSONObject(jsonString)
+
+        // Transform each key-value pair into Dart variable declarations
+        return jsonObject.keys().asSequence()
+            .joinToString(separator = "\n") { key ->
+                val type = jsonObject.get(key).toString()
+                val dartVariableName = key// Convert key to camelCase
+                "final $type $dartVariableName;"
+            }
     }
 
 }

@@ -43,4 +43,7 @@ tasks {
     publishPlugin {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
+    dependencies {
+        implementation("org.json:json:20210307")
+    }
 }
