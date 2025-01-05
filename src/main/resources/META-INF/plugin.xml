@@ -32,8 +32,8 @@
         <action
                 id="CreateFileAction"
                 class="MyAction"
-                text="Custom File"
-                description="Create a new custom file">
+                text="Create Model Class"
+                description="Create a new model file">
             <add-to-group group-id="NewGroup" anchor="last"/>
         </action>
     </actions>
