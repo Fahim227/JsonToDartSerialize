@@ -1,5 +1,4 @@
 
-import android.databinding.tool.ext.toCamelCase
 import com.google.common.io.CharStreams
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -11,10 +10,8 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import io.ktor.utils.io.errors.*
 import org.apache.commons.lang.text.StrSubstitutor
-import org.json.JSONObject
 import java.io.InputStreamReader
 import javax.swing.*
-import kotlin.reflect.typeOf
 
 
 public class MyAction: AnAction() {
@@ -49,10 +46,17 @@ public class MyAction: AnAction() {
                         resultString = replaceModelName(resultString,fileName)
 
                         // Step 2: Dynamically build variable declarations
-                        val classRegex = "class ${fileName}Model \\{".toRegex()
+                        val variablesInitializeRegex = "class ${fileName}Model \\{".toRegex()
                         val variableDeclarations = jsonToDartVariables(jsonData)
-                        resultString = resultString.replace(classRegex) {
+                        resultString = resultString.replace(variablesInitializeRegex) {
                             it.value + "\n\n" + variableDeclarations
+                        }
+
+                        // add required in constructor
+                        val constructionVariablesRegex = "${fileName}Model\\(\\{".toRegex()
+                        val variableConstuntonDeclarations = variablesWithRequired(jsonData)
+                        resultString = resultString.replace(constructionVariablesRegex) {
+                            it.value + "\n" + variableConstuntonDeclarations
                         }
 
                         fileName = "$fileName.dart"
@@ -91,15 +95,16 @@ public class MyAction: AnAction() {
 
     }
 
-    fun replaceModelName(template: String, modelName: String): String {
+    private fun replaceModelName(template: String, modelName: String): String {
         val regex = "\\{model_name}".toRegex() // Matches ${model_name}
         return template.replace(regex, modelName) // Replaces ${model_name} with modelName
     }
 
-    fun jsonToDartVariables(jsonString: String): String {
+    private fun jsonToDartVariables(jsonString: String): String {
         // Parse JSON string into a map-like structure
-        val jsonObject = JSONObject(jsonString)
-        val allKeys = jsonObject.keys()
+//        val jsonObject = JSONObject(jsonString)
+        val jsonObject = manualJsonParser(jsonString)
+        val allKeys = jsonObject.keys
 
         val allSequence = allKeys.asSequence()
 
@@ -107,15 +112,35 @@ public class MyAction: AnAction() {
         // Transform each key-value pair into Dart variable declarations
         return allSequence.joinToString(separator = "\n") { key ->
 
-            val type = handleJavaLangType(jsonObject.get(key))
+            val type = jsonObject[key]?.let { handleJavaLangType(it) }
             println(type)
-            println(type::class.java.typeName)
-            val dartVariableName = key// Convert key to camelCase
+//            println(type::class.java.typeName)
+            val dartVariableName = key // Convert key to camelCase
             "  final $type $dartVariableName;"
         }
     }
 
-    fun handleJavaLangType(type: Any): String {
+    private fun variablesWithRequired(jsonString: String):String{
+        // Parse JSON string into a map-like structure
+//        val jsonObject = JSONObject(jsonString)
+        val jsonObject = manualJsonParser(jsonString)
+        val allKeys = jsonObject.keys
+
+        val allSequence = allKeys.asSequence()
+
+
+        // Transform each key-value pair into Dart variable declarations
+        return allSequence.joinToString(separator = "\n") { key ->
+
+            val type = jsonObject[key]?.let { handleJavaLangType(it) }
+            println(type)
+//            println(type::class.java.typeName)
+            val dartVariableName = key // Convert key to camelCase
+            "    required this.$dartVariableName,"
+        }
+    }
+
+    private fun handleJavaLangType(type: Any): String {
         return when (type::class.java.typeName) {
             "java.lang.String" -> "String"
             "java.lang.Integer" -> "int"
@@ -124,6 +149,40 @@ public class MyAction: AnAction() {
             "java.lang.Float" -> "double"
             "java.lang.Long" -> "double"
             else -> "String"
+        }
+    }
+
+    private fun manualJsonParser(jsonString: String): Map<String, Any> {
+        val map = mutableMapOf<String, Any>()
+
+        // Remove curly braces and trim
+        val content = jsonString.trim().removeSurrounding("{", "}").trim()
+
+        // Split by comma to separate key-value pairs
+        val keyValuePairs = content.split(",").map { it.trim() }
+
+        for (pair in keyValuePairs) {
+            // Split key and value by colon
+            val keyValue = pair.split(":").map { it.trim() }
+
+            if (keyValue.size == 2) {
+                // Remove quotes from key and value
+                val key = keyValue[0].removeSurrounding("\"")
+                val value = parseValue(keyValue[1])
+                map[key] = value
+            }
+        }
+        return map
+    }
+
+    // Parse value based on type
+    private fun parseValue(value: String): Any {
+        return when {
+            value.startsWith("\"") && value.endsWith("\"") -> value.removeSurrounding("\"") // String
+            value.equals("true", ignoreCase = true) -> true // Boolean true
+            value.equals("false", ignoreCase = true) -> false // Boolean false
+            value.contains(".") -> value.toDoubleOrNull() ?: value // Double or fallback
+            else -> value.toIntOrNull() ?: value // Integer or fallback
         }
     }
 
