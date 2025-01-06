@@ -1,4 +1,7 @@
 
+import android.databinding.tool.ext.toCamelCase
+import com.example.jsontodartserialize.foramter.toLowerCamelCase
+import com.example.jsontodartserialize.foramter.toUpperCamelCase
 import com.google.common.io.CharStreams
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -115,7 +118,7 @@ public class MyAction: AnAction() {
             val type = jsonObject[key]?.let { handleJavaLangType(it) }
             println(type)
 //            println(type::class.java.typeName)
-            val dartVariableName = key // Convert key to camelCase
+            val dartVariableName = key.toLowerCamelCase() // Convert key to camelCase
             "  final $type $dartVariableName;"
         }
     }
@@ -135,7 +138,7 @@ public class MyAction: AnAction() {
             val type = jsonObject[key]?.let { handleJavaLangType(it) }
             println(type)
 //            println(type::class.java.typeName)
-            val dartVariableName = key // Convert key to camelCase
+            val dartVariableName = key.toLowerCamelCase() // Convert key to camelCase
             "    required this.$dartVariableName,"
         }
     }
@@ -188,6 +191,7 @@ public class MyAction: AnAction() {
 
 
 }
+
 
 class CustomFileDialog(private val dialogTitle: String) : DialogWrapper(true) {
     private val className = JTextField()
