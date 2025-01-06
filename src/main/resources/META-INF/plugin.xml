@@ -31,7 +31,7 @@
     <actions>
         <action
                 id="CreateFileAction"
-                class="MyAction"
+                class="DartModelGeneratorAction"
                 text="Create Model Class"
                 description="Create a new model file">
             <add-to-group group-id="NewGroup" anchor="last"/>
