@@ -12,21 +12,25 @@ private fun formatCamelCase(input: String, ignore: CharArray, upperCase: Boolean
                     seenSeparator = upperCase
                     seenUpperCase = !upperCase
                 }
+
                 in '0'..'9' -> {
                     it.append(c)
                     seenSeparator = false
                     seenUpperCase = false
                 }
+
                 in 'a'..'z' -> {
-                    it.append(if (seenSeparator) c.toUpperCase() else c)
+                    it.append(if (seenSeparator) c.uppercaseChar() else c)
                     seenSeparator = false
                     seenUpperCase = false
                 }
+
                 in 'A'..'Z' -> {
-                    it.append(if (seenUpperCase) c.toLowerCase() else c)
+                    it.append(if (seenUpperCase) c.lowercaseChar() else c)
                     seenSeparator = false
                     seenUpperCase = true
                 }
+
                 else -> if (it.isNotEmpty()) {
                     seenSeparator = true
                     seenUpperCase = false
@@ -49,17 +53,6 @@ private fun formatCamelCase(input: String, ignore: CharArray, upperCase: Boolean
 public fun String.toLowerCamelCase(vararg ignore: Char): String =
     formatCamelCase(this, ignore, false)
 
-/**
- * Format this [String] in **UpperCamelCase** (aka. _PascalCase_, _WikiCase_,
- * …).
- *
- * @param ignore can be used to specify characters that should be included
- *   verbatim in the result, note that they are still considered separators
- * @receiver [String] to format
- * @return **UpperCamelCase** formatted [String]
- * @since 0.1.0
- * @sample com.fleshgrinder.extensions.kotlin.CaseFormatTest.toUpperCamelCase
- */
 public fun String.toUpperCamelCase(vararg ignore: Char): String =
     formatCamelCase(this, ignore, true)
 
@@ -75,22 +68,26 @@ private fun formatCase(input: String, separator: Char, ignore: CharArray, upperC
                     seenSeparator = true
                     seenUpperCase = false
                 }
+
                 in '0'..'9' -> {
                     it.append(c)
                     seenSeparator = false
                     seenUpperCase = false
                 }
+
                 in 'a'..'z' -> {
                     it.append(if (upperCase) c.toUpperCase() else c)
                     seenSeparator = false
                     seenUpperCase = false
                 }
+
                 in 'A'..'Z' -> {
                     if (!seenSeparator && !seenUpperCase) it.append(separator)
                     it.append(if (upperCase) c else c.toLowerCase())
                     seenSeparator = false
                     seenUpperCase = true
                 }
+
                 else -> {
                     if (!seenSeparator || !seenUpperCase) it.append(separator)
                     seenSeparator = true
@@ -189,3 +186,8 @@ public fun String.toUpperDashCase(vararg ignore: Char): String =
  */
 public fun String.toUpperSnakeCase(vararg ignore: Char): String =
     formatUpperCase(this, '_', ignore)
+
+
+fun toPascalCase(str: String): String {
+    return str.replaceFirstChar { it.uppercaseChar() }
+}

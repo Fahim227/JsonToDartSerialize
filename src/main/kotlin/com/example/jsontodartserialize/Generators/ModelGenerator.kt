@@ -28,10 +28,12 @@ class ModelGenerator(private val className: String, private val jsonData: String
                 val replacements = mapOf("model_name" to className)
                 var processedContent = StrSubstitutor(replacements).replace(templateContent)
 
+                // Variables declare
                 processedContent = processedContent.replace(
                     "class ${className}Model \\{".toRegex()
                 ) { it.value + "\n\n" + JsonToDartModel.jsonToDartVariables(jsonData) }
 
+                // Constructor declare
                 processedContent = processedContent.replace(
                     "${className}Model\\(\\{".toRegex()
                 ) { it.value + "\n" + JsonToDartModel.jsonToDartConstructorVariables(jsonData) }
