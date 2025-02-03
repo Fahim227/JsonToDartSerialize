@@ -32,8 +32,9 @@
         <action
                 id="CreateFileAction"
                 class="DartModelGeneratorAction"
-                text="Create Model Class"
-                description="Create a new model file">
+                text="Create Data Class"
+                description="Create a new data file"
+                icon="/icons/pluginIcon.svg">
             <add-to-group group-id="NewGroup" anchor="last"/>
         </action>
     </actions>
