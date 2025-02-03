@@ -30,11 +30,11 @@ class EntityGenerator(private val className: String, private val jsonData: Strin
                 var processedContent = StrSubstitutor(replacements).replace(templateContent)
 
                 processedContent = processedContent.replace(
-                    "class ${className}Model \\{".toRegex()
+                    "class ${className}Entity \\{".toRegex()
                 ) { it.value + "\n\n" + JsonToDartModel.jsonToDartVariables(jsonData) }
 
                 processedContent = processedContent.replace(
-                    "${className}Model\\(\\{".toRegex()
+                    "${className}Entity\\(\\{".toRegex()
                 ) { it.value + "\n" + JsonToDartModel.jsonToDartConstructorVariables(jsonData) }
 
                 ApplicationManager.getApplication().runWriteAction {
